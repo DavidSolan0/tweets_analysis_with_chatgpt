@@ -1,9 +1,11 @@
-src/credentials.py
 venv
 .vscode/settings.json
+
 src/__pycache__/
-/data
-/artifacts
-/src/.ipynb_checkpoints
+src/.ipynb_checkpoints/
+
 /src/data/__pycache__
 src/data/credentials.py
+
+/data
+/artifacts
