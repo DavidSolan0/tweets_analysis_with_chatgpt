@@ -1,0 +1,6 @@
+src/credentials.py
+venv
+.vscode/settings.json
+src/__pycache__/credentials.cpython-37.pyc
+src/__pycache__/utils.cpython-37.pyc
+data
