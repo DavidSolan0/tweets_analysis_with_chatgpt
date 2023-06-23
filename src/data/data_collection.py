@@ -1,9 +1,7 @@
-import ast
 import time
 import json
 import tweepy
 import argparse
-import numpy as np
 import pandas as pd
 
 from utils import save_pandas_object

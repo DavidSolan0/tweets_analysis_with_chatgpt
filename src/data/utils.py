@@ -1,17 +1,10 @@
 import os
 import re
 import glob
-import json
-import time
-import gensim
 import pickle
 import pandas as pd
 
-import openai
-
-from nltk.corpus import stopwords
 from nltk.tokenize import TweetTokenizer
-from gensim.utils import simple_preprocess
 
 tknzr = TweetTokenizer(strip_handles=True, reduce_len=True)
 
