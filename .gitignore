@@ -6,3 +6,4 @@ src/__pycache__/
 /artifacts
 /src/.ipynb_checkpoints
 /src/data/__pycache__
+src/data/credentials.py
