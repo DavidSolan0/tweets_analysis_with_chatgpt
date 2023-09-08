@@ -63,4 +63,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 We would like to thank OpenAI for providing the ChatGPT API, which powers this text analysis toolkit.
 
 Feel free to reach out if you have any questions or need further assistance. Happy text analysis!
-```
+
