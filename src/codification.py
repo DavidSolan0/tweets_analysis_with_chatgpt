@@ -7,6 +7,11 @@ import openai
 
 
 class Codificacion:
+
+    """
+    Esta clase proporciona un mecanismo de codificación de texto utilizando chatGPT.
+    """
+
     def __init__(self, openai_api_key):
         self.openai_api_key = openai_api_key
         openai.api_key = self.openai_api_key
@@ -51,16 +56,12 @@ class Codificacion:
             pd.Series: Serie de pandas que contiene los datos convertidos.
         """
         new_dict = {}
-
-        for i in range(0, len(json_list)):
-            dict_i = json.loads("".join(json_list[i].splitlines()))
+        for json_str in json_list:
+            dict_i = json.loads("".join(json_str.splitlines()))
             new_keys = self.replace_keys_values(dict_i.keys())
-
-            new_dict_i = {}
-            for i, (key, value) in enumerate(dict_i.items(), start=0):
-                new_key = new_keys[i]
-                new_dict_i[new_key] = value
-
+            new_dict_i = {
+                new_key: value for new_key, value in zip(new_keys, dict_i.values())
+            }
             new_dict.update(new_dict_i)
 
         return pd.Series(new_dict)
@@ -87,17 +88,18 @@ class Codificacion:
 
     def get_topics(
         self,
-        df: pd.DataFrame,
+        df_to_codificate: pd.DataFrame,
         batch_size: int,
         column_name: str,
         id_column: str,
         num_topicos: int,
     ) -> list:
         """
-        Obtiene los tópicos para cada frase en un DataFrame, utilizando un modelo de generación de lenguaje.
+        Obtiene los tópicos para cada frase en un DataFrame, utilizando un modelo de generación
+        de lenguaje.
 
         Args:
-            df (pd.DataFrame): DataFrame que contiene las frases.
+            df_to_codificate (pd.DataFrame): DataFrame que contiene las frases.
             batch_size (int): Tamaño del lote de frases a procesar en cada iteración.
             column_name (str): Nombre de la columna que contiene las frases.
             id_column (str): Nombre de la columna que contiene los identificadores de las frases.
@@ -107,9 +109,9 @@ class Codificacion:
             list: Lista de respuestas en formato JSON que contiene cada frase y su lista de tópicos.
         """
         response = []
-        for i in range(0, len(df), batch_size):
-            text_batch = df[i : (i + batch_size)][column_name].tolist()
-            ids_batch = df[i : (i + batch_size)][id_column].tolist()
+        for i in range(0, len(df_to_codificate), batch_size):
+            text_batch = df_to_codificate[i : (i + batch_size)][column_name].tolist()
+            ids_batch = df_to_codificate[i : (i + batch_size)][id_column].tolist()
             str_text_batch = self.join_text_batch(text_batch, ids_batch)
 
             prompt = f"""
@@ -133,13 +135,18 @@ class Codificacion:
         return response
 
     def get_sentiment(
-        self, df: pd.DataFrame, batch_size: int, column_name: str, id_column: str
+        self,
+        df_to_codificate: pd.DataFrame,
+        batch_size: int,
+        column_name: str,
+        id_column: str,
     ) -> list:
         """
-        Obtiene el sentimiento para cada frase en un DataFrame, utilizando un modelo de generación de lenguaje.
+        Obtiene el sentimiento para cada frase en un DataFrame, utilizando un modelo de
+        generación de lenguaje.
 
         Args:
-            df (pd.DataFrame): DataFrame que contiene las frases.
+            df_to_codificate (pd.DataFrame): DataFrame que contiene las frases.
             batch_size (int): Tamaño del lote de frases a procesar en cada iteración.
             column_name (str): Nombre de la columna que contiene las frases.
             id_column (str): Nombre de la columna que contiene los identificadores de las frases.
@@ -148,18 +155,18 @@ class Codificacion:
             list: Lista de respuestas en formato JSON que contiene cada frase y su sentimiento.
         """
         response = []
-        for i in range(0, len(df), batch_size):
-            text_batch = df[i : (i + batch_size)][column_name].tolist()
-            ids_batch = df[i : (i + batch_size)][id_column].tolist()
+        for i in range(0, len(df_to_codificate), batch_size):
+            text_batch = df_to_codificate[i : (i + batch_size)][column_name].tolist()
+            ids_batch = df_to_codificate[i : (i + batch_size)][id_column].tolist()
             str_text_batch = self.join_text_batch(text_batch, ids_batch)
 
             prompt = f"""
-                Determine el sentimiento para \
-                cada una de las frases a continuación: \
+                Clasifica cada una de las frases a continuación
+                en sentimiento positivo, negativo o neutro. \
 
                 {str_text_batch}
 
-                El resultado debe ser una lista.
+                El resultado debe ser un JSON con cada frase y su sentimiento.
 
                 """
 
@@ -173,28 +180,36 @@ class Codificacion:
         return response
 
     def get_translation(
-        self, df: pd.DataFrame, batch_size: int, column_name: str, id_column: str
+        self,
+        df_to_codificate: pd.DataFrame,
+        batch_size: int,
+        column_name: str,
+        id_column: str,
+        lang: str = "inglés",
     ) -> list:
         """
-        Realiza la traducción al inglés de cada frase en un DataFrame, utilizando un modelo de generación de lenguaje.
+        Realiza la traducción al inglés de cada frase en un DataFrame, utilizando un modelo de
+        generación de lenguaje.
 
         Args:
-            df (pd.DataFrame): DataFrame que contiene las frases.
+            df_to_codificate (pd.DataFrame): DataFrame que contiene las frases.
             batch_size (int): Tamaño del lote de frases a procesar en cada iteración.
             column_name (str): Nombre de la columna que contiene las frases.
             id_column (str): Nombre de la columna que contiene los identificadores de las frases.
+            lang (str): Lengüaje objetivo a traducir
 
         Returns:
-            list: Lista de respuestas en formato JSON que contiene cada frase y su traducción al inglés.
+            list: Lista de respuestas en formato JSON que contiene cada frase y su traducción al
+            lengüaje indicado.
         """
         response = []
-        for i in range(0, len(df), batch_size):
-            text_batch = df[i : (i + batch_size)][column_name].tolist()
-            ids_batch = df[i : (i + batch_size)][id_column].tolist()
+        for i in range(0, len(df_to_codificate), batch_size):
+            text_batch = df_to_codificate[i : (i + batch_size)][column_name].tolist()
+            ids_batch = df_to_codificate[i : (i + batch_size)][id_column].tolist()
             str_text_batch = self.join_text_batch(text_batch, ids_batch)
 
             prompt = f"""
-                Realice la traducción a inglés de \
+                Realice la traducción a {lang} de \
                 cada una de las frases a continuación: \
 
                 {str_text_batch}
@@ -213,24 +228,30 @@ class Codificacion:
         return response
 
     def get_spelling_correction(
-        self, df: pd.DataFrame, batch_size: int, column_name: str, id_column: str
+        self,
+        df_to_codificate: pd.DataFrame,
+        batch_size: int,
+        column_name: str,
+        id_column: str,
     ) -> list:
         """
-        Realiza la corrección ortográfica de cada frase en un DataFrame, utilizando un modelo de generación de lenguaje.
+        Realiza la corrección ortográfica de cada frase en un DataFrame, utilizando un modelo de
+        generación de lenguaje.
 
         Args:
-            df (pd.DataFrame): DataFrame que contiene las frases.
+            df_to_codificate (pd.DataFrame): DataFrame que contiene las frases.
             batch_size (int): Tamaño del lote de frases a procesar en cada iteración.
             column_name (str): Nombre de la columna que contiene las frases.
             id_column (str): Nombre de la columna que contiene los identificadores de las frases.
 
         Returns:
-            list: Lista de respuestas en formato JSON que contiene cada frase y su corrección ortográfica.
+            list: Lista de respuestas en formato JSON que contiene cada frase y su corrección
+            ortográfica.
         """
         response = []
-        for i in range(0, len(df), batch_size):
-            text_batch = df[i : (i + batch_size)][column_name].tolist()
-            ids_batch = df[i : (i + batch_size)][id_column].tolist()
+        for i in range(0, len(df_to_codificate), batch_size):
+            text_batch = df_to_codificate[i : (i + batch_size)][column_name].tolist()
+            ids_batch = df_to_codificate[i : (i + batch_size)][id_column].tolist()
             str_text_batch = self.join_text_batch(text_batch, ids_batch)
 
             prompt = f"""
@@ -253,14 +274,14 @@ class Codificacion:
         return response
 
     def save_pandas_object(
-        self, df: pd.DataFrame, root_path: str, subfolder: str, name: str
+        self, codificated_df: pd.DataFrame, root_path: str, subfolder: str, name: str
     ) -> None:
         """
         Guardar los resultados de la escucha en la carpeta "data.
         Si la carpeta no existe primero la crea.
 
         Args:
-            df (pd.DataFrame): Archivo a guardar.
+            codificated_df (pd.DataFrame): Archivo a guardar.
             subfolder (str): Subfolder en data donde se guardarán los datos.
             name (str): Nombre que se quiere para los archivos.
 
@@ -277,20 +298,20 @@ class Codificacion:
             print(f"Root directory already exists at {folder_path}")
 
         # Proceed with saving the file in the root directory
-        file_path = os.path.join(folder_path, f"{name}")
-        df.to_csv(file_path, index=False)
+        file_path = os.path.join(folder_path, f"{name}.csv")
+        codificated_df.to_csv(file_path, index=False)
 
     def save_pickle_object(
         self, obj, root_path: str, subfolder: str, name: str
     ) -> None:
         """
-        Save a file as a pickle file in the specified directory.
+        Guarda un archivo como un archivo pickle en el directorio especificado.
 
         Args:
-            obj : Object to be saved.
-            root_path (str): Root directory path where the file will be saved.
-            subfolder (str): Subfolder in the root directory where the file will be saved.
-            name (str): Name for the file.
+            obj : Objeto que se va a guardar.
+            root_path (str): Ruta del directorio raíz donde se guardará el archivo.
+            subfolder (str): Subcarpeta en el directorio raíz donde se guardará el archivo.
+            name (str): Nombre para el archivo.
 
         Returns:
             None.
@@ -306,20 +327,20 @@ class Codificacion:
 
         # Proceed with saving the file in the root directory
         file_path = os.path.join(folder_path, f"{name}.pkl")
-        with open(file_path, "wb") as f:
-            pickle.dump(obj, f)
+        with open(file_path, "wb") as file:
+            pickle.dump(obj, file)
 
     def load_pickle_object(self, file_path: str):
         """
-        Load a pickle file.
+        Cargar un archivo pickle.
 
         Args:
-            file_path (str): Path to the pickle file.
+            file_path (str): Ruta al archivo pickle.
 
         Returns:
-            The loaded object.
+            El objeto cargado.
         """
-        with open(file_path, "rb") as f:
-            obj = pickle.load(f)
+        with open(file_path, "rb") as file:
+            obj = pickle.load(file)
 
         return obj
